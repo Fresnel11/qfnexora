@@ -1,0 +1,136 @@
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700&family=Roboto:wght@300;400;500;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary: #00f0ff;
+  --secondary: #7b2dff;
+  --tertiary: #ff2d7b;
+  --dark: #0a0a1a;
+  --light: #f0f8ff;
+}
+
+body {
+  font-family: 'Roboto', sans-serif;
+  @apply antialiased transition-colors duration-300;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Orbitron', sans-serif;
+  @apply font-medium tracking-wider;
+}
+
+/* Glassmorphism */
+.glass {
+  @apply bg-opacity-20 backdrop-blur-md border border-opacity-30 shadow-lg;
+}
+
+.dark .glass {
+  @apply bg-dark bg-opacity-30 border-white/10;
+}
+
+.light .glass {
+  @apply bg-white bg-opacity-30 border-black/10;
+}
+
+/* Neon border effects */
+.neon-border-primary {
+  @apply border border-primary relative;
+  box-shadow: 0 0 5px var(--primary), 0 0 10px var(--primary);
+}
+
+.neon-border-secondary {
+  @apply border border-secondary relative;
+  box-shadow: 0 0 5px var(--secondary), 0 0 10px var(--secondary);
+}
+
+.neon-border-tertiary {
+  @apply border border-tertiary relative;
+  box-shadow: 0 0 5px var(--tertiary), 0 0 10px var(--tertiary);
+}
+
+/* Gradient backgrounds */
+.gradient-primary {
+  @apply bg-gradient-to-r from-primary to-secondary;
+}
+
+.gradient-secondary {
+  @apply bg-gradient-to-r from-secondary to-tertiary;
+}
+
+/* Animations */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes shine {
+  from {
+    background-position: 200% center;
+  }
+  to {
+    background-position: -200% center;
+  }
+}
+
+.animate-pulse {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-shine {
+  background: linear-gradient(
+    to right,
+    transparent 0%,
+    rgba(255, 255, 255, 0.2) 25%,
+    transparent 50%,
+    rgba(255, 255, 255, 0.2) 75%,
+    transparent 100%
+  );
+  background-size: 200% auto;
+  animation: shine 3s linear infinite;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-500 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-400;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  @apply bg-gray-700;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-600;
+}

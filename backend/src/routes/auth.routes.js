@@ -1,6 +1,6 @@
 const express = require('express');
 const { register, login } = require('../controllers/auth.controller');
-const { validate, loginSchema } = require('../utils/validator');
+const { validate, loginSchema, registerSchema } = require('../utils/validator');
 
 const router = express.Router();
 
@@ -17,14 +17,43 @@ const router = express.Router();
  *           schema:
  *             type: object
  *             properties:
+ *               firstname:
+ *                 type: string
+ *               lastname:
+ *                 type: string
  *               email:
  *                 type: string
  *                 format: email
+ *               phone:
+ *                 type: string
+ *               dateOfBirth:
+ *                 type: string
+ *                 format: date
+ *               userType:
+ *                 type: string
+ *                 enum: [individual, company]
  *               password:
  *                 type: string
  *                 minLength: 6
+ *               companyName:
+ *                 type: string
+ *               companyWebsite:
+ *                 type: string
+ *               companyAddress:
+ *                 type: string
+ *               companyDescription:
+ *                 type: string
+ *               companyLogoUrl:
+ *                 type: string
+ *               IFU:
+ *                 type: string
  *             required:
+ *               - firstname
+ *               - lastname
  *               - email
+ *               - phone
+ *               - dateOfBirth
+ *               - userType
  *               - password
  *     responses:
  *       201:
@@ -34,19 +63,14 @@ const router = express.Router();
  *             schema:
  *               type: object
  *               properties:
- *                 message:
- *                   type: string
  *                 user:
  *                   type: object
- *                   properties:
- *                     id:
- *                       type: string
- *                     email:
- *                       type: string
+ *                 token:
+ *                   type: string
  *       400:
  *         description: Données invalides
  */
-router.post('/register', validate(), register);
+router.post('/register', validate(registerSchema), register);
 
 /**
  * @swagger

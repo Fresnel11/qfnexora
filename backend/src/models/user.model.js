@@ -1,81 +1,84 @@
 const mongoose = require('mongoose');
 
-// Schéma pour l'utilisateur
 const userSchema = new mongoose.Schema(
   {
+    firstname: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    lastname: {
+      type: String,
+      required: true,
+      trim: true,
+    },
     email: {
       type: String,
-      required: [true, 'L\'email est requis'],
+      required: true,
       unique: true,
       lowercase: true,
       trim: true,
     },
-    password: {
+    phone: {
       type: String,
-      required: [true, 'Le mot de passe est requis'],
-      minlength: [6, 'Le mot de passe doit avoir au moins 6 caractères'],
-    },
-    name: {
-      type: String,
-      required: [true, 'Le nom est requis'],
+      required: true,
       trim: true,
     },
-    role: {
+    dateOfBirth: {
+      type: Date,
+      required: true,
+    },
+
+    // Pour savoir le type d'utilisateur
+    userType: {
       type: String,
-      enum: ['user', 'business'],
-      required: [true, 'Le rôle est requis'],
+      enum: ['individual', 'company'],
+      required: true,
     },
-    country: {
-      type: String,
-      required: [true, 'Le pays est requis'],
-      trim: true,
-    },
-    age: {
-      type: Number,
-      min: [18, 'L\'âge doit être d\'au moins 18 ans'],
-      required: [
-        function () {
-          return this.role === 'user';
-        },
-        'L\'âge est requis pour les particuliers',
-      ],
-    },
+
+    // Champs optionnels spécifiques aux entreprises
     companyName: {
       type: String,
+      default: null,
       trim: true,
-      required: [
-        function () {
-          return this.role === 'business';
-        },
-        'Le nom de l\'entreprise est requis pour les entreprises',
-      ],
+    },
+    companyWebsite: {
+      type: String,
+      default: null,
+      trim: true,
     },
     companyAddress: {
       type: String,
+      default: null,
       trim: true,
     },
-    currency: {
+    companyDescription: {
       type: String,
-      default: 'USD',
+      default: null,
+      trim: true,
     },
-    language: {
+    companyLogoUrl: {
       type: String,
-      enum: ['en', 'fr'],
-      default: 'en',
+      default: null,
     },
-    theme: {
+    IFU: {
       type: String,
-      enum: ['light', 'dark'],
-      default: 'light',
+      default: null,
+      trim: true,
+    },
+
+    // Sécurité
+    password: {
+      type: String,
+      required: true,
+    },
+    // Vérification de l'email
+    emailVerified: {
+      type: Boolean,
+      default: false,
     },
   },
-  {
-    timestamps: true, // Ajoute createdAt et updatedAt
-  }
+  { timestamps: true }
 );
 
-// Crée un index unique sur l'email
-userSchema.index({ email: 1 }, { unique: true });
-
-// Exporte le modèle
 module.exports = mongoose.model('User', userSchema);

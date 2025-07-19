@@ -1,54 +1,22 @@
-const User = require('../models/user.model');
-const { hashPassword, comparePassword } = require('../utils/bcrypt');
-const { generateToken } = require('../utils/jwt');
+const { register: registerService } = require('../services/auth.service');
+// const { generateToken } = require('../utils/jwt'); // plus utilisé ici
 
 // Inscription d'un utilisateur
 const register = async (req, res) => {
   try {
-    const { email, password, name, role, country, age, companyName, companyAddress } = req.body;
+    // Appel du service d'inscription
+    const user = await registerService(req.body);
 
-    // Vérifie si l'utilisateur existe déjà
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ error: 'Email déjà utilisé' });
-    }
-
-    // Hache le mot de passe
-    const hashedPassword = await hashPassword(password);
-
-    // Crée un nouvel utilisateur
-    const user = new User({
-      email,
-      password: hashedPassword,
-      name,
-      role,
-      country,
-      ...(role === 'user' && { age }), // Ajoute age pour les particuliers
-      ...(role === 'business' && { companyName, companyAddress }), // Ajoute companyName et companyAddress pour les entreprises
-    });
-
-    await user.save();
-
-    // Génère un JWT
-    const token = generateToken(user._id, user.role);
-
-    // Retourne les données de l'utilisateur et le token
-    const userResponse = {
-      id: user._id,
-      email: user.email,
-      name: user.name,
-      role: user.role,
-      country: user.country,
-    };
-    if (role === 'user') {
-      userResponse.age = user.age;
-    } else {
-      userResponse.companyName = user.companyName;
-      userResponse.companyAddress = user.companyAddress;
-    }
-
-    res.status(201).json({ user: userResponse, token });
+    // On ne génère plus de token ici
+    res.status(201).json({ user });
   } catch (error) {
+    // Gestion des erreurs personnalisées
+    if (error.message === "Cet email est déjà utilisé.") {
+      return res.status(400).json({ error: error.message });
+    }
+    if (error.message === "Champs obligatoires manquants." || error.message === "Type d'utilisateur invalide.") {
+      return res.status(400).json({ error: error.message });
+    }
     res.status(500).json({ error: 'Erreur serveur' });
   }
 };

@@ -112,6 +112,11 @@ async function login(email, password) {
     throw new Error('Email ou mot de passe incorrect');
   }
 
+  // Vérification du verrouillage du compte
+  if (user.isLocked) {
+    throw new Error('Votre compte est bloqué suite à plusieurs tentatives échouées. Veuillez contacter le support pour le déverrouiller.');
+  }
+
   // Vérification de l'email
   if (!user.emailVerified) {
     throw new Error('Veuillez valider votre adresse email avant de vous connecter.');
@@ -120,8 +125,22 @@ async function login(email, password) {
   // Vérification du mot de passe
   const isMatch = await comparePassword(password, user.password);
   if (!isMatch) {
+    user.loginAttempts = (user.loginAttempts || 0) + 1;
+    // Si 5 tentatives échouées, on verrouille le compte
+    if (user.loginAttempts >= 5) {
+      user.isLocked = true;
+    }
+    await user.save();
+    if (user.isLocked) {
+      throw new Error('Votre compte est bloqué suite à plusieurs tentatives échouées. Veuillez contacter le support pour le déverrouiller.');
+    }
     throw new Error('Email ou mot de passe incorrect');
   }
+
+  // Si la connexion réussit, on réinitialise les compteurs
+  user.loginAttempts = 0;
+  user.isLocked = false;
+  await user.save();
 
   // Génération du token JWT valable 3h
   const token = generateToken(user._id, user.userType, { expiresIn: '3h' });
@@ -241,6 +260,21 @@ async function resetPassword(email, otpCode, newPassword) {
   return "Mot de passe réinitialisé avec succès.";
 }
 
+/**
+ * Suppression du compte utilisateur (avec confirmation du mot de passe)
+ * @param {Object} user - Utilisateur connecté (req.user)
+ * @param {string} password - Mot de passe à confirmer
+ * @returns {Promise<string>} - Message de succès
+ */
+async function deleteAccount(user, password) {
+  const isMatch = await comparePassword(password, user.password);
+  if (!isMatch) {
+    throw new Error('Mot de passe incorrect');
+  }
+  await User.deleteOne({ _id: user._id });
+  return 'Compte supprimé avec succès.';
+}
+
 module.exports = {
   register,
   login,
@@ -248,4 +282,5 @@ module.exports = {
   verifyEmail,
   forgotPassword,
   resetPassword,
+  deleteAccount,
 }; 

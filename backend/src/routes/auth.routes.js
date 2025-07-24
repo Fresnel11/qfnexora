@@ -8,6 +8,7 @@ const {
   changePassword,
   forgotPassword,
   resetPassword,
+  deleteAccount,
 } = require('../controllers/auth.controller');
 const { validate, loginSchema, registerSchema } = require('../utils/validator');
 const { authenticateToken } = require('../middlewares/auth.middleware');
@@ -342,5 +343,45 @@ router.post('/forgot-password', forgotPassword);
  *         description: Erreur serveur
  */
 router.post('/reset-password', resetPassword);
+
+/**
+ * @swagger
+ * /auth/delete-account:
+ *   delete:
+ *     summary: Supprimer le compte utilisateur (confirmation du mot de passe requise)
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               password:
+ *                 type: string
+ *             required:
+ *               - password
+ *     responses:
+ *       200:
+ *         description: Compte supprimé avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *       400:
+ *         description: Mot de passe incorrect ou manquant
+ *       401:
+ *         description: Non autorisé (token manquant)
+ *       403:
+ *         description: Interdit (token invalide)
+ *       500:
+ *         description: Erreur serveur
+ */
+router.delete('/delete-account', authenticateToken, deleteAccount);
 
 module.exports = router;

@@ -95,6 +95,15 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    // Sécurité avancée : tentatives de connexion et verrouillage
+    loginAttempts: {
+      type: Number,
+      default: 0,
+    },
+    isLocked: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );

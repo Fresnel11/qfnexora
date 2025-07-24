@@ -7,6 +7,7 @@ const {
   changePassword: changePasswordService,
   forgotPassword: forgotPasswordService,
   resetPassword: resetPasswordService,
+  deleteAccount: deleteAccountService,
 } = require('../services/auth.service');
 // const { generateToken } = require('../utils/jwt'); // plus utilisé ici
 
@@ -38,6 +39,9 @@ const login = async (req, res) => {
     res.status(200).json({ user, token });
   } catch (error) {
     if (error.message === 'Veuillez valider votre adresse email avant de vous connecter.') {
+      return res.status(403).json({ error: error.message });
+    }
+    if (error.message === 'Votre compte est bloqué suite à plusieurs tentatives échouées. Veuillez contacter le support pour le déverrouiller.') {
       return res.status(403).json({ error: error.message });
     }
     if (error.message === 'Email ou mot de passe incorrect') {
@@ -148,4 +152,21 @@ const resetPassword = async (req, res) => {
   }
 };
 
-module.exports = { register, login, verifyEmail, resendOtp, logout, changePassword, forgotPassword, resetPassword };
+// Suppression du compte utilisateur
+const deleteAccount = async (req, res) => {
+  try {
+    const { password } = req.body;
+    if (!password) {
+      return res.status(400).json({ error: 'Le champ password est requis.' });
+    }
+    const message = await deleteAccountService(req.user, password);
+    res.status(200).json({ message });
+  } catch (error) {
+    if (error.message === 'Mot de passe incorrect') {
+      return res.status(400).json({ error: error.message });
+    }
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+};
+
+module.exports = { register, login, verifyEmail, resendOtp, logout, changePassword, forgotPassword, resetPassword, deleteAccount };

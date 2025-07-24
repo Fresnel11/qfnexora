@@ -108,7 +108,28 @@ async function login(email, password) {
   return { user: userObj, token };
 }
 
+/**
+ * Changement de mot de passe pour un utilisateur connecté
+ * @param {Object} user - Utilisateur connecté (req.user)
+ * @param {string} currentPassword - Ancien mot de passe
+ * @param {string} newPassword - Nouveau mot de passe
+ * @returns {Promise<string>} - Message de succès
+ */
+async function changePassword(user, currentPassword, newPassword) {
+  // Vérifier l'ancien mot de passe
+  const isMatch = await comparePassword(currentPassword, user.password);
+  if (!isMatch) {
+    throw new Error('Ancien mot de passe incorrect');
+  }
+  // Hacher le nouveau mot de passe
+  const hashedPassword = await bcrypt.hashPassword(newPassword);
+  user.password = hashedPassword;
+  await user.save();
+  return 'Mot de passe modifié avec succès.';
+}
+
 module.exports = {
   register,
   login,
+  changePassword,
 }; 

@@ -1,6 +1,14 @@
 const express = require('express');
-const { register, login } = require('../controllers/auth.controller');
+const {
+  register,
+  login,
+  verifyEmail,
+  resendOtp,
+  logout,
+  changePassword,
+} = require('../controllers/auth.controller');
 const { validate, loginSchema, registerSchema } = require('../utils/validator');
+const { authenticateToken } = require('../middlewares/auth.middleware');
 
 const router = express.Router();
 
@@ -115,5 +123,146 @@ router.post('/register', validate(registerSchema), register);
  *         description: Identifiants invalides
  */
 router.post('/login', validate(loginSchema), login);
+
+/**
+ * @swagger
+ * /auth/verify-email:
+ *   post:
+ *     summary: Vérification de l'email par code OTP
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               otpCode:
+ *                 type: string
+ *             required:
+ *               - email
+ *               - otpCode
+ *     responses:
+ *       200:
+ *         description: Email vérifié avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 user:
+ *                   type: object
+ *       400:
+ *         description: Code incorrect, expiré ou email déjà vérifié
+ *       404:
+ *         description: Utilisateur introuvable
+ */
+router.post('/verify-email', verifyEmail);
+
+/**
+ * @swagger
+ * /auth/resend-otp:
+ *   post:
+ *     summary: Renvoyer un nouveau code OTP à l'utilisateur
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *             required:
+ *               - email
+ *     responses:
+ *       200:
+ *         description: Nouveau code OTP envoyé avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *       400:
+ *         description: Email déjà vérifié
+ *       404:
+ *         description: Utilisateur introuvable
+ *       500:
+ *         description: Erreur lors de l'envoi de l'email OTP
+ */
+router.post('/resend-otp', resendOtp);
+
+/**
+ * @swagger
+ * /auth/logout:
+ *   post:
+ *     summary: Déconnexion de l'utilisateur
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Déconnexion réussie
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *       401:
+ *         description: Non autorisé (token manquant)
+ *       403:
+ *         description: Interdit (token invalide)
+ */
+router.post('/logout', authenticateToken, logout);
+
+/**
+ * @swagger
+ * /auth/change-password:
+ *   post:
+ *     summary: Changer le mot de passe de l'utilisateur connecté
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               currentPassword:
+ *                 type: string
+ *               newPassword:
+ *                 type: string
+ *             required:
+ *               - currentPassword
+ *               - newPassword
+ *     responses:
+ *       200:
+ *         description: Mot de passe modifié avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *       400:
+ *         description: Ancien mot de passe incorrect ou champs manquants
+ *       401:
+ *         description: Non autorisé (token manquant)
+ *       403:
+ *         description: Interdit (token invalide)
+ */
+router.post('/change-password', authenticateToken, changePassword);
 
 module.exports = router;

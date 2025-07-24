@@ -70,6 +70,33 @@ const savingPlanDepositSchema = Joi.object({
   note: Joi.string().allow('', null),
 });
 
+// Schéma pour la création d'une transaction
+const transactionSchema = Joi.object({
+  type: Joi.string().valid('deposit', 'withdrawal', 'transfer').required(),
+  amount: Joi.number().min(0).required(),
+  category: Joi.string().default('Autre'),
+  description: Joi.string().allow('', null),
+  status: Joi.string().valid('pending', 'success', 'failed').default('success'),
+  currency: Joi.string().default('XOF'),
+  date: Joi.date().iso(),
+  source: Joi.string().valid('manual', 'future_integration').default('manual'),
+  relatedSavingPlan: Joi.string().optional(),
+  receiptUrl: Joi.string().uri().allow('', null),
+  nature: Joi.string().valid('income', 'expense').required(),
+});
+
+// Schéma pour la création/modification d'un budget
+const budgetSchema = Joi.object({
+  period: Joi.string().valid('weekly', 'monthly', 'yearly').required(),
+  amount: Joi.number().min(0).required(),
+  category: Joi.string().default('Global'),
+  startDate: Joi.date().iso().required(),
+  endDate: Joi.date().iso().required(),
+  currency: Joi.string().default('XOF'),
+  status: Joi.string().valid('active', 'expired', 'cancelled').default('active'),
+  notifications: Joi.boolean().default(false),
+});
+
 // Middleware de validation amélioré pour retourner le message d'erreur exact
 function validate(schema) {
   return (req, res, next) => {
@@ -83,4 +110,4 @@ function validate(schema) {
   };
 }
 
-module.exports = { userRegisterSchema, businessRegisterSchema, loginSchema, validate, registerSchema, savingPlanSchema, savingPlanDepositSchema };
+module.exports = { userRegisterSchema, businessRegisterSchema, loginSchema, validate, registerSchema, savingPlanSchema, savingPlanDepositSchema, transactionSchema, budgetSchema };

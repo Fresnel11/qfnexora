@@ -51,6 +51,25 @@ const registerSchema = Joi.object({
   IFU: Joi.string().trim().allow(null, ''),
 });
 
+// Schéma pour la création d'un plan d'épargne
+const savingPlanSchema = Joi.object({
+  title: Joi.string().trim().required(),
+  description: Joi.string().allow('', null),
+  targetAmount: Joi.number().min(0).required(),
+  startDate: Joi.date().iso().required(),
+  endDate: Joi.date().iso().required(),
+  autoSave: Joi.boolean().default(false),
+  frequency: Joi.string().valid('daily', 'weekly', 'monthly').when('autoSave', { is: true, then: Joi.required() }),
+  currency: Joi.string().default('XOF'),
+  IFU: Joi.string().allow('', null),
+});
+
+// Schéma pour l'ajout d'un dépôt à un plan d'épargne
+const savingPlanDepositSchema = Joi.object({
+  amount: Joi.number().min(1).required(),
+  note: Joi.string().allow('', null),
+});
+
 // Middleware de validation amélioré pour retourner le message d'erreur exact
 function validate(schema) {
   return (req, res, next) => {
@@ -64,4 +83,4 @@ function validate(schema) {
   };
 }
 
-module.exports = { userRegisterSchema, businessRegisterSchema, loginSchema, validate, registerSchema };
+module.exports = { userRegisterSchema, businessRegisterSchema, loginSchema, validate, registerSchema, savingPlanSchema, savingPlanDepositSchema };

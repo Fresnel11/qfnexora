@@ -6,6 +6,8 @@ const {
   resendOtp,
   logout,
   changePassword,
+  forgotPassword,
+  resetPassword,
 } = require('../controllers/auth.controller');
 const { validate, loginSchema, registerSchema } = require('../utils/validator');
 const { authenticateToken } = require('../middlewares/auth.middleware');
@@ -264,5 +266,81 @@ router.post('/logout', authenticateToken, logout);
  *         description: Interdit (token invalide)
  */
 router.post('/change-password', authenticateToken, changePassword);
+
+/**
+ * @swagger
+ * /auth/forgot-password:
+ *   post:
+ *     summary: Demander la réinitialisation du mot de passe (envoi d'un code OTP par email)
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *             required:
+ *               - email
+ *     responses:
+ *       200:
+ *         description: Si un compte existe, un code de réinitialisation a été envoyé
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *       400:
+ *         description: Email manquant
+ *       500:
+ *         description: Erreur serveur
+ */
+router.post('/forgot-password', forgotPassword);
+
+/**
+ * @swagger
+ * /auth/reset-password:
+ *   post:
+ *     summary: Réinitialiser le mot de passe via un code OTP
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               otpCode:
+ *                 type: string
+ *               newPassword:
+ *                 type: string
+ *             required:
+ *               - email
+ *               - otpCode
+ *               - newPassword
+ *     responses:
+ *       200:
+ *         description: Mot de passe réinitialisé avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *       400:
+ *         description: Erreur de validation ou code incorrect/expiré
+ *       500:
+ *         description: Erreur serveur
+ */
+router.post('/reset-password', resetPassword);
 
 module.exports = router;

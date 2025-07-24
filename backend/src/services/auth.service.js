@@ -5,6 +5,13 @@ const { generateToken } = require('../utils/jwt');
 const { sendOtpMail } = require('../utils/mailer');
 
 /**
+ * Génère un code OTP à 6 chiffres
+ */
+function generateOtpCode() {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+/**
  * Inscription d'un nouvel utilisateur (particulier ou entreprise)
  * @param {Object} userData - Données reçues du client
  * @returns {Promise<Object>} - Utilisateur créé (sans le mot de passe)
@@ -45,6 +52,10 @@ async function register(userData) {
   // Hachage du mot de passe
   const hashedPassword = await bcrypt.hashPassword(password);
 
+  // Génération du code OTP et expiration (10 minutes)
+  const otpCode = generateOtpCode();
+  const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
   // Préparation des données utilisateur
   const userPayload = {
     firstname,
@@ -54,6 +65,8 @@ async function register(userData) {
     dateOfBirth,
     userType,
     password: hashedPassword,
+    otpCode,
+    otpExpires,
   };
 
   // Si c'est une entreprise, ajouter les champs optionnels
@@ -139,8 +152,100 @@ async function changePassword(user, currentPassword, newPassword) {
   return 'Mot de passe modifié avec succès.';
 }
 
+/**
+ * Vérifie le code OTP pour l'email et active l'utilisateur
+ * @param {string} email
+ * @param {string} otpCode
+ * @returns {Promise<Object>} - Utilisateur mis à jour (sans le mot de passe)
+ */
+async function verifyEmail(email, otpCode) {
+  const user = await User.findOne({ email });
+  if (!user) {
+    throw new Error("Utilisateur introuvable");
+  }
+  if (user.emailVerified) {
+    throw new Error("Email déjà vérifié");
+  }
+  if (!user.otpCode || !user.otpExpires) {
+    throw new Error("Aucun code de vérification trouvé. Veuillez demander un nouveau code.");
+  }
+  if (user.otpCode !== otpCode) {
+    throw new Error("Code de vérification incorrect");
+  }
+  if (user.otpExpires < new Date()) {
+    throw new Error("Code de vérification expiré");
+  }
+  user.emailVerified = true;
+  user.otpCode = null;
+  user.otpExpires = null;
+  await user.save();
+  const userObj = user.toObject();
+  delete userObj.password;
+  return userObj;
+}
+
+/**
+ * Demande de réinitialisation du mot de passe (envoi d'un code OTP par email)
+ * @param {string} email
+ * @returns {Promise<string>} - Message de succès générique
+ */
+async function forgotPassword(email) {
+  const user = await User.findOne({ email });
+  // Toujours retourner un message générique pour la sécurité
+  if (!user) {
+    return "Si un compte existe pour cet email, un code de réinitialisation a été envoyé.";
+  }
+  // Générer un code OTP et une date d'expiration (15 min)
+  const resetOtp = generateOtpCode();
+  const resetOtpExpires = new Date(Date.now() + 15 * 60 * 1000);
+  user.resetOtp = resetOtp;
+  user.resetOtpExpires = resetOtpExpires;
+  await user.save();
+  // Envoyer le code OTP par email (même template, mais sujet différent)
+  try {
+    await sendOtpMail(user.email, resetOtp);
+    console.log(`✅ Code OTP de réinitialisation envoyé à ${user.email} (code: ${resetOtp})`);
+  } catch (err) {
+    console.error(`❌ Erreur lors de l'envoi du code OTP de réinitialisation à ${user.email} :`, err);
+  }
+  return "Si un compte existe pour cet email, un code de réinitialisation a été envoyé.";
+}
+
+/**
+ * Réinitialisation du mot de passe via code OTP
+ * @param {string} email
+ * @param {string} otpCode
+ * @param {string} newPassword
+ * @returns {Promise<string>} - Message de succès
+ */
+async function resetPassword(email, otpCode, newPassword) {
+  const user = await User.findOne({ email });
+  if (!user) {
+    throw new Error("Utilisateur introuvable");
+  }
+  if (!user.resetOtp || !user.resetOtpExpires) {
+    throw new Error("Aucune demande de réinitialisation en cours. Veuillez refaire une demande.");
+  }
+  if (user.resetOtp !== otpCode) {
+    throw new Error("Code de réinitialisation incorrect");
+  }
+  if (user.resetOtpExpires < new Date()) {
+    throw new Error("Code de réinitialisation expiré");
+  }
+  // Hacher et mettre à jour le mot de passe
+  const hashedPassword = await bcrypt.hashPassword(newPassword);
+  user.password = hashedPassword;
+  user.resetOtp = null;
+  user.resetOtpExpires = null;
+  await user.save();
+  return "Mot de passe réinitialisé avec succès.";
+}
+
 module.exports = {
   register,
   login,
   changePassword,
+  verifyEmail,
+  forgotPassword,
+  resetPassword,
 }; 

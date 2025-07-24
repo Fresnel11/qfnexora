@@ -5,6 +5,8 @@ const {
   resendOtp: resendOtpService,
   logout: logoutService,
   changePassword: changePasswordService,
+  forgotPassword: forgotPasswordService,
+  resetPassword: resetPasswordService,
 } = require('../services/auth.service');
 // const { generateToken } = require('../utils/jwt'); // plus utilisé ici
 
@@ -105,6 +107,7 @@ const changePassword = async (req, res) => {
     const message = await changePasswordService(req.user, currentPassword, newPassword);
     res.status(200).json({ message });
   } catch (error) {
+    console.error('Erreur dans changePassword:', error);
     if (error.message === 'Ancien mot de passe incorrect') {
       return res.status(400).json({ error: error.message });
     }
@@ -112,4 +115,37 @@ const changePassword = async (req, res) => {
   }
 };
 
-module.exports = { register, login, verifyEmail, resendOtp, logout, changePassword };
+// Demande de réinitialisation du mot de passe
+const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ error: 'Le champ email est requis.' });
+    }
+    const message = await forgotPasswordService(email);
+    res.status(200).json({ message });
+  } catch (error) {
+    console.error('Erreur dans forgotPassword:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+};
+
+// Réinitialisation du mot de passe
+const resetPassword = async (req, res) => {
+  try {
+    const { email, otpCode, newPassword } = req.body;
+    if (!email || !otpCode || !newPassword) {
+      return res.status(400).json({ error: 'Les champs email, otpCode et newPassword sont requis.' });
+    }
+    const message = await resetPasswordService(email, otpCode, newPassword);
+    res.status(200).json({ message });
+  } catch (error) {
+    console.error('Erreur dans resetPassword:', error);
+    if (error.message === 'Utilisateur introuvable' || error.message === 'Aucune demande de réinitialisation en cours. Veuillez refaire une demande.' || error.message === 'Code de réinitialisation incorrect' || error.message === 'Code de réinitialisation expiré') {
+      return res.status(400).json({ error: error.message });
+    }
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+};
+
+module.exports = { register, login, verifyEmail, resendOtp, logout, changePassword, forgotPassword, resetPassword };

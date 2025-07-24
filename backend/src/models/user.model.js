@@ -86,6 +86,15 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    // Réinitialisation du mot de passe
+    resetOtp: {
+      type: String,
+      default: null,
+    },
+    resetOtpExpires: {
+      type: Date,
+      default: null,
+    },
   },
   { timestamps: true }
 );

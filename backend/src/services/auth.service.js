@@ -2,6 +2,7 @@ const User = require('../models/user.model');
 const bcrypt = require('../utils/bcrypt');
 const { comparePassword } = require('../utils/bcrypt');
 const { generateToken } = require('../utils/jwt');
+const { sendOtpMail } = require('../utils/mailer');
 
 /**
  * Inscription d'un nouvel utilisateur (particulier ou entreprise)
@@ -72,6 +73,16 @@ async function register(userData) {
   // On retire le mot de passe de la réponse
   const userObj = user.toObject();
   delete userObj.password;
+
+  // Envoi du code OTP par email
+  try {
+    await sendOtpMail(user.email, otpCode);
+    console.log(`✅ Email OTP envoyé avec succès à ${user.email} (code: ${otpCode})`);
+  } catch (err) {
+    // Log l'erreur mais ne bloque pas l'inscription
+    console.error(`❌ Erreur lors de l'envoi de l'email OTP à ${user.email} :`, err);
+  }
+
   return userObj;
 }
 

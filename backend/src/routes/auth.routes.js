@@ -9,6 +9,7 @@ const {
   forgotPassword,
   resetPassword,
   deleteAccount,
+  refreshToken,
 } = require('../controllers/auth.controller');
 const { validate, loginSchema, registerSchema } = require('../utils/validator');
 const { authenticateToken } = require('../middlewares/auth.middleware');
@@ -383,5 +384,43 @@ router.post('/reset-password', resetPassword);
  *         description: Erreur serveur
  */
 router.delete('/delete-account', authenticateToken, deleteAccount);
+
+/**
+ * @swagger
+ * /auth/refresh-token:
+ *   post:
+ *     summary: Actualiser le token d'accès via un refresh token
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               refreshToken:
+ *                 type: string
+ *             required:
+ *               - refreshToken
+ *     responses:
+ *       200:
+ *         description: Nouveaux tokens générés avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 accessToken:
+ *                   type: string
+ *                 refreshToken:
+ *                   type: string
+ *       400:
+ *         description: Refresh token manquant
+ *       401:
+ *         description: Refresh token invalide ou expiré
+ *       500:
+ *         description: Erreur serveur
+ */
+router.post('/refresh-token', refreshToken);
 
 module.exports = router;

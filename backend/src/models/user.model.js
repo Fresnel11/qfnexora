@@ -104,6 +104,15 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    // Authentification : refresh token
+    refreshToken: {
+      type: String,
+      default: null,
+    },
+    refreshTokenExpires: {
+      type: Date,
+      default: null,
+    },
   },
   { timestamps: true }
 );

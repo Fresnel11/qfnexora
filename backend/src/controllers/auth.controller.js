@@ -8,6 +8,7 @@ const {
   forgotPassword: forgotPasswordService,
   resetPassword: resetPasswordService,
   deleteAccount: deleteAccountService,
+  refreshTokenService,
 } = require('../services/auth.service');
 // const { generateToken } = require('../utils/jwt'); // plus utilisé ici
 
@@ -35,8 +36,8 @@ const register = async (req, res) => {
 const login = async (req, res) => {
   try {
     const { email, password } = req.body;
-    const { user, token } = await loginService(email, password);
-    res.status(200).json({ user, token });
+    const { user, accessToken, refreshToken } = await loginService(email, password);
+    res.status(200).json({ user, accessToken, refreshToken });
   } catch (error) {
     if (error.message === 'Veuillez valider votre adresse email avant de vous connecter.') {
       return res.status(403).json({ error: error.message });
@@ -45,6 +46,23 @@ const login = async (req, res) => {
       return res.status(403).json({ error: error.message });
     }
     if (error.message === 'Email ou mot de passe incorrect') {
+      return res.status(401).json({ error: error.message });
+    }
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+};
+
+// Actualisation du token d'accès via refresh token
+const refreshToken = async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+    if (!refreshToken) {
+      return res.status(400).json({ error: 'Le champ refreshToken est requis.' });
+    }
+    const tokens = await refreshTokenService(refreshToken);
+    res.status(200).json(tokens);
+  } catch (error) {
+    if (error.message === 'Refresh token manquant' || error.message === 'Refresh token invalide ou expiré') {
       return res.status(401).json({ error: error.message });
     }
     res.status(500).json({ error: 'Erreur serveur' });
@@ -169,4 +187,4 @@ const deleteAccount = async (req, res) => {
   }
 };
 
-module.exports = { register, login, verifyEmail, resendOtp, logout, changePassword, forgotPassword, resetPassword, deleteAccount };
+module.exports = { register, login, verifyEmail, resendOtp, logout, changePassword, forgotPassword, resetPassword, deleteAccount, refreshToken };

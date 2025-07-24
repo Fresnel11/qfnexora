@@ -3,12 +3,21 @@ const bcrypt = require('../utils/bcrypt');
 const { comparePassword } = require('../utils/bcrypt');
 const { generateToken } = require('../utils/jwt');
 const { sendOtpMail } = require('../utils/mailer');
+const crypto = require('crypto');
 
 /**
  * Génère un code OTP à 6 chiffres
  */
 function generateOtpCode() {
   return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+/**
+ * Génère un refresh token sécurisé
+ * @returns {string}
+ */
+function generateRefreshToken() {
+  return crypto.randomBytes(64).toString('hex');
 }
 
 /**
@@ -103,7 +112,7 @@ async function register(userData) {
  * Connexion d'un utilisateur
  * @param {string} email
  * @param {string} password
- * @returns {Promise<{user: Object, token: string}>}
+ * @returns {Promise<{user: Object, accessToken: string, refreshToken: string}>}
  */
 async function login(email, password) {
   // Recherche de l'utilisateur
@@ -126,7 +135,6 @@ async function login(email, password) {
   const isMatch = await comparePassword(password, user.password);
   if (!isMatch) {
     user.loginAttempts = (user.loginAttempts || 0) + 1;
-    // Si 5 tentatives échouées, on verrouille le compte
     if (user.loginAttempts >= 5) {
       user.isLocked = true;
     }
@@ -140,15 +148,44 @@ async function login(email, password) {
   // Si la connexion réussit, on réinitialise les compteurs
   user.loginAttempts = 0;
   user.isLocked = false;
-  await user.save();
 
-  // Génération du token JWT valable 3h
-  const token = generateToken(user._id, user.userType, { expiresIn: '3h' });
+  // Génération du token JWT valable 15min (access token)
+  const accessToken = generateToken(user._id, user.userType, { expiresIn: '15m' });
+
+  // Génération du refresh token valable 7 jours
+  const refreshToken = generateRefreshToken();
+  const refreshTokenExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 jours
+  user.refreshToken = refreshToken;
+  user.refreshTokenExpires = refreshTokenExpires;
+  await user.save();
 
   // On retire le mot de passe de la réponse
   const userObj = user.toObject();
   delete userObj.password;
-  return { user: userObj, token };
+  return { user: userObj, accessToken, refreshToken };
+}
+
+/**
+ * Actualisation du token d'accès via refresh token
+ * @param {string} refreshToken
+ * @returns {Promise<{accessToken: string, refreshToken: string}>}
+ */
+async function refreshTokenService(refreshToken) {
+  if (!refreshToken) {
+    throw new Error('Refresh token manquant');
+  }
+  const user = await User.findOne({ refreshToken });
+  if (!user || !user.refreshTokenExpires || user.refreshTokenExpires < new Date()) {
+    throw new Error('Refresh token invalide ou expiré');
+  }
+  // Générer un nouveau access token et un nouveau refresh token (rotation)
+  const newAccessToken = generateToken(user._id, user.userType, { expiresIn: '15m' });
+  const newRefreshToken = generateRefreshToken();
+  const newRefreshTokenExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  user.refreshToken = newRefreshToken;
+  user.refreshTokenExpires = newRefreshTokenExpires;
+  await user.save();
+  return { accessToken: newAccessToken, refreshToken: newRefreshToken };
 }
 
 /**
@@ -283,4 +320,5 @@ module.exports = {
   forgotPassword,
   resetPassword,
   deleteAccount,
+  refreshTokenService,
 }; 

@@ -10,6 +10,7 @@ const {
   resetPassword,
   deleteAccount,
   refreshToken,
+  getCurrentUser,
 } = require('../controllers/auth.controller');
 const { validate, loginSchema, registerSchema } = require('../utils/validator');
 const { authenticateToken } = require('../middlewares/auth.middleware');
@@ -422,5 +423,44 @@ router.delete('/delete-account', authenticateToken, deleteAccount);
  *         description: Erreur serveur
  */
 router.post('/refresh-token', refreshToken);
+
+/**
+ * @swagger
+ * /auth/me:
+ *   get:
+ *     summary: Récupérer les informations de l'utilisateur connecté
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Informations de l'utilisateur récupérées avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 _id:
+ *                   type: string
+ *                 firstname:
+ *                   type: string
+ *                 lastname:
+ *                   type: string
+ *                 email:
+ *                   type: string
+ *                 phone:
+ *                   type: string
+ *                 dateOfBirth:
+ *                   type: string
+ *                 userType:
+ *                   type: string
+ *                 emailVerified:
+ *                   type: boolean
+ *       401:
+ *         description: Non autorisé (token manquant)
+ *       403:
+ *         description: Interdit (token invalide)
+ */
+router.get('/me', authenticateToken, getCurrentUser);
 
 module.exports = router;

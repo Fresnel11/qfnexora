@@ -1,36 +1,14 @@
 import React from 'react';
 import { Plus, MoreHorizontal } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useFinance } from '../store/FinanceContext';
 import Card from '../ui/Card';
 import Button from '../ui/Button';
 import ProgressBar from '../ui/ProgressBar';
 
 const SavingPlans = () => {
   const { t } = useLanguage();
-
-  const plans = [
-    {
-      name: t('emergencyFund'),
-      current: 5000,
-      target: 50000,
-      percentage: 50,
-      color: 'emerald'
-    },
-    {
-      name: t('vacationFund'),
-      current: 3000,
-      target: 5000,
-      percentage: 60,
-      color: 'emerald'
-    },
-    {
-      name: t('homeDownPayment'),
-      current: 7250,
-      target: 200000,
-      percentage: 36.25,
-      color: 'emerald'
-    }
-  ];
+  const { savingPlans, totalSavings, loading, error } = useFinance();
 
   return (
     <Card className="p-6">
@@ -43,28 +21,61 @@ const SavingPlans = () => {
       </div>
       
       <div className="space-y-4">
-        <div className="text-center">
-          <p className="text-sm text-gray-600 dark:text-gray-400">{t('totalSavings')}</p>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">$84,500</p>
-        </div>
-        
-        <div className="space-y-4">
-          {plans.map((plan, index) => (
-            <div key={index} className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-gray-900 dark:text-white">{plan.name}</span>
-                <MoreHorizontal className="w-4 h-4 text-gray-400 cursor-pointer" />
-              </div>
-              
-              <ProgressBar value={plan.current} max={plan.target} color={plan.color} />
-              
-              <div className="flex justify-between items-center text-xs text-gray-600 dark:text-gray-400">
-                <span>${plan.current.toLocaleString()} {plan.percentage}%</span>
-                <span>{t('target')}: ${plan.target.toLocaleString()}</span>
-              </div>
+        {loading ? (
+          <div className="text-center py-4">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+            <p className="text-sm text-gray-600 dark:text-gray-400">Chargement des plans d'épargne...</p>
+          </div>
+        ) : error ? (
+          <div className="text-center py-4">
+            <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+          </div>
+        ) : (
+          <>
+            <div className="text-center">
+              <p className="text-sm text-gray-600 dark:text-gray-400">{t('totalSavings')}</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                {totalSavings.totalCurrent.toLocaleString()} / {totalSavings.totalTarget.toLocaleString()}
+              </p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                {totalSavings.totalPercentage.toFixed(1)}% atteint
+              </p>
             </div>
-          ))}
-        </div>
+            
+            <div className="space-y-4">
+              {savingPlans.length === 0 ? (
+                <div className="text-center py-4">
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Aucun plan d'épargne créé</p>
+                </div>
+              ) : (
+                savingPlans.map((plan, index) => {
+                  const percentage = plan.targetAmount > 0 ? (plan.currentAmount / plan.targetAmount) * 100 : 0;
+                  return (
+                    <div key={plan._id || index} className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-gray-900 dark:text-white">{plan.title}</span>
+                        <MoreHorizontal className="w-4 h-4 text-gray-400 cursor-pointer" />
+                      </div>
+                      
+                      <ProgressBar 
+                        value={plan.currentAmount || 0} 
+                        max={plan.targetAmount || 1} 
+                        color="emerald" 
+                      />
+                      
+                      <div className="flex justify-between items-center text-xs text-gray-600 dark:text-gray-400">
+                        <span>
+                          {(plan.currentAmount || 0).toLocaleString()} {percentage.toFixed(1)}%
+                        </span>
+                        <span>{t('target')}: {(plan.targetAmount || 0).toLocaleString()}</span>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </>
+        )}
       </div>
     </Card>
   );

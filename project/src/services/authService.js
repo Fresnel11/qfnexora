@@ -227,9 +227,25 @@ const authService = {
     try {
       // Décoder le token JWT (partie payload)
       const payload = JSON.parse(atob(token.split('.')[1]));
+      console.log('authService - Token payload décodé:', payload);
       return payload;
     } catch (error) {
       console.error('Erreur lors du décodage du token:', error);
+      return null;
+    }
+  },
+
+  /**
+   * Récupérer les informations complètes de l'utilisateur depuis la base de données
+   * @returns {Promise<Object|null>} Informations complètes de l'utilisateur
+   */
+  async getCurrentUserDetails() {
+    try {
+      const response = await api.get('/auth/me');
+      console.log('authService - Détails utilisateur récupérés:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Erreur lors de la récupération des détails utilisateur:', error);
       return null;
     }
   }

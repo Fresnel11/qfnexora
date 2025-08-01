@@ -2,12 +2,31 @@ import React from 'react';
 import { Search, Bell, Sun, Moon, Globe, Menu } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useAuth } from '../store/AuthContext';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 
 const Header = ({ sidebarOpen, setSidebarOpen }) => {
   const { theme, toggleTheme } = useTheme();
   const { language, toggleLanguage, t } = useLanguage();
+  const { user } = useAuth();
+
+  // Fonction pour générer les initiales
+  const getInitials = (firstName, lastName) => {
+    if (!firstName || !lastName) return 'U';
+    return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+  };
+
+  // Fonction pour obtenir le nom complet
+  const getFullName = (firstName, lastName) => {
+    if (!firstName || !lastName) return 'Utilisateur';
+    return `${firstName} ${lastName}`;
+  };
+
+  // Debug: afficher les informations utilisateur
+  console.log('Header - User data:', user);
+  console.log('Header - Firstname:', user?.firstname);
+  console.log('Header - Lastname:', user?.lastname);
 
   return (
     <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 fixed top-0 left-0 right-0 z-40 lg:ml-64">
@@ -63,9 +82,13 @@ const Header = ({ sidebarOpen, setSidebarOpen }) => {
           </div>
           
           <div className="flex items-center space-x-3 hidden sm:flex">
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300 hidden md:block">Andrew Forbist</span>
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300 hidden md:block">
+              {getFullName(user?.firstname, user?.lastname)}
+            </span>
             <div className="w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center transition-transform hover:scale-110">
-              <span className="text-white text-sm font-medium">AF</span>
+              <span className="text-white text-sm font-medium">
+                {getInitials(user?.firstname, user?.lastname)}
+              </span>
             </div>
           </div>
         </div>

@@ -187,4 +187,19 @@ const deleteAccount = async (req, res) => {
   }
 };
 
-module.exports = { register, login, verifyEmail, resendOtp, logout, changePassword, forgotPassword, resetPassword, deleteAccount, refreshToken };
+// Récupérer les informations de l'utilisateur connecté
+const getCurrentUser = async (req, res) => {
+  try {
+    // req.user contient les informations de l'utilisateur depuis le middleware authenticateToken
+    const user = req.user;
+    
+    // Retourner les informations sans le mot de passe
+    const { password, ...userWithoutPassword } = user.toObject();
+    
+    res.status(200).json(userWithoutPassword);
+  } catch (error) {
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+};
+
+module.exports = { register, login, verifyEmail, resendOtp, logout, changePassword, forgotPassword, resetPassword, deleteAccount, refreshToken, getCurrentUser };

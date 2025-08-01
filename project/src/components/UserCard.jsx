@@ -1,10 +1,30 @@
 import React from 'react';
 import { Wifi, CreditCard } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useAuth } from '../store/AuthContext';
+import { useFinance } from '../store/FinanceContext';
 import Card from '../ui/Card';
 
 const UserCard = () => {
   const { t } = useLanguage();
+  const { user } = useAuth();
+  const { balance, loading } = useFinance();
+
+  // Fonction pour obtenir le nom complet
+  const getFullName = (firstName, lastName) => {
+    if (!firstName || !lastName) return 'Utilisateur';
+    return `${firstName} ${lastName}`;
+  };
+
+  // Fonction pour formater le montant
+  const formatAmount = (amount) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(amount);
+  };
 
   return (
     <Card className="bg-gradient-to-br from-emerald-600 to-emerald-800 text-white p-6 relative overflow-hidden animate-fade-in h-full w-full lg:w-[450px]">
@@ -24,12 +44,14 @@ const UserCard = () => {
       
       <div className="space-y-4 relative z-10">
         <div className="pt-8">
-          <h2 className="text-xl font-semibold tracking-wide">Andrew Forbist</h2>
+          <h2 className="text-xl font-semibold tracking-wide">{getFullName(user?.firstname, user?.lastname)}</h2>
         </div>
         
         <div>
           <p className="text-emerald-100 text-sm">{t('balanceAmount')}</p>
-          <p className="text-2xl font-bold tracking-wider">$562.000</p>
+          <p className="text-2xl font-bold tracking-wider">
+            {loading ? '...' : formatAmount(balance)}
+          </p>
         </div>
         
         <div className="flex justify-between items-end">

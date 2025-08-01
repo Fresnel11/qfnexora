@@ -77,10 +77,10 @@ const transactionSchema = Joi.object({
   category: Joi.string().default('Autre'),
   description: Joi.string().allow('', null),
   status: Joi.string().valid('pending', 'success', 'failed').default('success'),
-  currency: Joi.string().default('XOF'),
+  currency: Joi.string().valid('XOF', 'USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'CHF', 'CNY', 'INR').default('XOF'),
   date: Joi.date().iso(),
   source: Joi.string().valid('manual', 'future_integration').default('manual'),
-  relatedSavingPlan: Joi.string().optional(),
+  relatedSavingPlan: Joi.string().allow('', null).optional(),
   receiptUrl: Joi.string().uri().allow('', null),
   nature: Joi.string().valid('income', 'expense').required(),
 });

@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { LanguageProvider } from './contexts/LanguageContext';
 import { AuthProvider } from './store/AuthContext';
+import { FinanceProvider } from './store/FinanceContext';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
@@ -22,7 +23,8 @@ function App() {
     <ThemeProvider>
       <LanguageProvider>
         <AuthProvider>
-          <Router>
+          <FinanceProvider>
+            <Router>
           <Routes>
             {/* Routes publiques (accessibles seulement si non connecté) */}
             <Route path="/login" element={
@@ -68,6 +70,7 @@ function App() {
             } />
           </Routes>
         </Router>
+        </FinanceProvider>
         </AuthProvider>
       </LanguageProvider>
     </ThemeProvider>

@@ -97,14 +97,27 @@ export const AuthProvider = ({ children }) => {
   // Vérifier l'authentification au chargement
   useEffect(() => {
     const checkAuth = async () => {
+      console.log('AuthContext - Vérification de l\'authentification...');
       if (authService.isAuthenticated()) {
         const user = authService.getCurrentUser();
+        console.log('AuthContext - Utilisateur récupéré:', user);
         if (user) {
-          dispatch({ type: AUTH_ACTIONS.SET_USER, payload: user });
+          // Récupérer les détails complets de l'utilisateur
+          const userDetails = await authService.getCurrentUserDetails();
+          if (userDetails) {
+            console.log('AuthContext - Détails utilisateur récupérés:', userDetails);
+            dispatch({ type: AUTH_ACTIONS.SET_USER, payload: userDetails });
+          } else {
+            // Si on ne peut pas récupérer les détails, utiliser les infos du token
+            dispatch({ type: AUTH_ACTIONS.SET_USER, payload: user });
+          }
         } else {
           // Token invalide, déconnecter
+          console.log('AuthContext - Token invalide, déconnexion...');
           dispatch({ type: AUTH_ACTIONS.LOGOUT });
         }
+      } else {
+        console.log('AuthContext - Aucun token trouvé');
       }
     };
 

@@ -1,29 +1,35 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useLocation, useNavigate, Link } from 'react-router-dom';
 import AuthLayout from '../../components/Auth/AuthLayout';
-// import { useAuth } from '../../hooks/useAuth'; // À activer si tu as un hook d'auth
-// import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../store/AuthContext';
 // import { useTranslation } from 'react-i18next';
 
 const Login = () => {
   // const { t } = useTranslation();
-  // const { login } = useAuth();
-  // const navigate = useNavigate();
+  const { login, loading, error } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+
+  // Afficher le message de succès si on vient de vérifier l'email
+  useEffect(() => {
+    if (location.state?.message) {
+      setSuccessMessage(location.state.message);
+      // Nettoyer le state pour éviter de réafficher le message
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-    setLoading(true);
-    try {
-      // await login({ email, password });
-      // navigate('/dashboard');
-      setLoading(false);
-    } catch (err) {
-      setError('Identifiants invalides'); // t('login.error')
-      setLoading(false);
+    
+    const result = await login(email, password);
+    if (result.success) {
+      // Rediriger vers la page d'origine ou le dashboard
+      const from = location.state?.from?.pathname || '/';
+      navigate(from, { replace: true });
     }
   };
 
@@ -52,7 +58,15 @@ const Login = () => {
             required
           />
         </div>
+        
+        {successMessage && (
+          <div className="text-green-600 text-sm bg-green-50 dark:bg-green-900/20 p-3 rounded">
+            ✅ {successMessage}
+          </div>
+        )}
+        
         {error && <div className="text-red-500 text-sm">{error}</div>}
+        
         <button
           type="submit"
           className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded transition disabled:opacity-60"
@@ -62,10 +76,10 @@ const Login = () => {
           {loading ? 'Connexion...' : 'Se connecter'}
         </button>
       </form>
-      <div className="flex justify-between mt-4 text-sm">
-        <a href="/forgot-password" className="text-blue-600 hover:underline dark:text-blue-400">Mot de passe oublié ?</a>
-        <a href="/register" className="text-blue-600 hover:underline dark:text-blue-400">Créer un compte</a>
-      </div>
+                        <div className="flex justify-between mt-4 text-sm">
+                    <Link to="/forgot-password" className="text-blue-600 hover:underline dark:text-blue-400">Mot de passe oublié ?</Link>
+                    <Link to="/register" className="text-blue-600 hover:underline dark:text-blue-400">Créer un compte</Link>
+                  </div>
     </AuthLayout>
   );
 };

@@ -1,6 +1,6 @@
 import React from 'react';
-import LanguageSwitcher from '../UI/LanguageSwitcher';
-import ThemeSwitcher from '../UI/ThemeSwitcher';
+import LanguageSwitcher from '../../ui/LanguageSwitcher';
+import ThemeSwitcher from '../../ui/ThemeSwitcher';
 // import logo from '../../img/logo.png'; // Décommente si tu as un logo
 
 const AuthLayout = ({ children }) => {

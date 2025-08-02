@@ -1,5 +1,8 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import authService, { AuthError } from '../services/authService';
+import transactionService from '../services/transactionService';
+import savingPlanService from '../services/savingPlanService';
+import budgetService from '../services/budgetService';
 
 // Types d'actions
 const AUTH_ACTIONS = {
@@ -150,6 +153,23 @@ export const AuthProvider = ({ children }) => {
       try {
         const result = await authService.login(email, password);
         dispatch({ type: AUTH_ACTIONS.LOGIN_SUCCESS, payload: result });
+        
+        // Charger les données financières après connexion réussie
+        console.log('AuthContext - Connexion réussie, chargement des données financières...');
+        try {
+          const [balanceData, transactions, savingPlans, totalSavings, budgets, activeBudget] = await Promise.all([
+            transactionService.getUserBalance(),
+            transactionService.getUserTransactions(),
+            savingPlanService.getUserSavingPlans(),
+            savingPlanService.getTotalSavings(),
+            budgetService.getUserBudgets(),
+            budgetService.getActiveBudget()
+          ]);
+          console.log('AuthContext - Données financières chargées:', { balanceData, transactions, savingPlans, totalSavings, budgets, activeBudget });
+        } catch (financeError) {
+          console.error('AuthContext - Erreur lors du chargement des données financières:', financeError);
+        }
+        
         return { success: true, user: result.user };
       } catch (error) {
         const message = error instanceof AuthError ? error.message : 'Erreur lors de la connexion';

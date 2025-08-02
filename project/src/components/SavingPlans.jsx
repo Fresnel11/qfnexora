@@ -6,7 +6,7 @@ import Card from '../ui/Card';
 import Button from '../ui/Button';
 import ProgressBar from '../ui/ProgressBar';
 
-const SavingPlans = () => {
+const SavingPlans = ({ onAddPlan }) => {
   const { t } = useLanguage();
   const { savingPlans, totalSavings, loading, error } = useFinance();
 
@@ -14,7 +14,12 @@ const SavingPlans = () => {
     <Card className="p-6">
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{t('savingPlans')}</h3>
-        <Button variant="outline" size="sm" className="flex items-center space-x-2">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="flex items-center space-x-2"
+          onClick={onAddPlan}
+        >
           <Plus className="w-4 h-4" />
           <span>{t('addPlan')}</span>
         </Button>

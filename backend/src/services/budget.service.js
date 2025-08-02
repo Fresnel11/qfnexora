@@ -7,6 +7,17 @@ const Budget = require('../models/budget.model');
  * @returns {Promise<Object>} - Budget créé
  */
 async function createBudget(userId, data) {
+  // Vérifier s'il existe déjà un budget actif pour la même période
+  const existingBudget = await Budget.findOne({
+    user: userId,
+    period: data.period,
+    status: 'active'
+  });
+
+  if (existingBudget) {
+    throw new Error(`Vous avez déjà un budget actif pour la période ${data.period}. Veuillez désactiver ou supprimer le budget existant avant d'en créer un nouveau.`);
+  }
+
   const budget = new Budget({ ...data, user: userId });
   await budget.save();
   return budget;
@@ -56,10 +67,25 @@ async function deleteBudget(userId, budgetId) {
   return Budget.findOneAndDelete({ _id: budgetId, user: userId });
 }
 
+/**
+ * Désactive un budget (change le status de 'active' à 'inactive')
+ * @param {ObjectId} userId
+ * @param {ObjectId} budgetId
+ * @returns {Promise<Object|null>}
+ */
+async function deactivateBudget(userId, budgetId) {
+  return Budget.findOneAndUpdate(
+    { _id: budgetId, user: userId },
+    { $set: { status: 'inactive' } },
+    { new: true }
+  );
+}
+
 module.exports = {
   createBudget,
   getUserBudgets,
   getBudgetById,
   updateBudget,
   deleteBudget,
+  deactivateBudget,
 }; 

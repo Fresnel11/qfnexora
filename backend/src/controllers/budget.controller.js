@@ -4,6 +4,7 @@ const {
   getBudgetById,
   updateBudget,
   deleteBudget,
+  deactivateBudget,
 } = require('../services/budget.service');
 
 // Créer un budget
@@ -59,4 +60,15 @@ const remove = async (req, res) => {
   }
 };
 
-module.exports = { create, list, getById, update, remove }; 
+// Désactiver un budget
+const deactivate = async (req, res) => {
+  try {
+    const budget = await deactivateBudget(req.user._id, req.params.id);
+    if (!budget) return res.status(404).json({ error: 'Budget non trouvé' });
+    res.status(200).json({ message: 'Budget désactivé avec succès', budget });
+  } catch (error) {
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+};
+
+module.exports = { create, list, getById, update, remove, deactivate }; 

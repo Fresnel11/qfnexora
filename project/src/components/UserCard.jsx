@@ -3,6 +3,7 @@ import { Wifi, CreditCard } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../store/AuthContext';
 import { useFinance } from '../store/FinanceContext';
+import { formatCurrency } from '../utils/currency';
 import Card from '../ui/Card';
 
 const UserCard = () => {
@@ -18,12 +19,7 @@ const UserCard = () => {
 
   // Fonction pour formater le montant
   const formatAmount = (amount) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(amount);
+    return formatCurrency(amount, 'XOF');
   };
 
   return (

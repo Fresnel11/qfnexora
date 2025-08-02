@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import transactionService, { TransactionError } from '../services/transactionService';
 import savingPlanService, { SavingPlanError } from '../services/savingPlanService';
+import budgetService, { BudgetError } from '../services/budgetService';
+import { useAuth } from './AuthContext';
 
 // Types d'actions
 const FINANCE_ACTIONS = {
@@ -9,6 +11,8 @@ const FINANCE_ACTIONS = {
   SET_TRANSACTIONS: 'SET_TRANSACTIONS',
   SET_SAVING_PLANS: 'SET_SAVING_PLANS',
   SET_TOTAL_SAVINGS: 'SET_TOTAL_SAVINGS',
+  SET_BUDGETS: 'SET_BUDGETS',
+  SET_ACTIVE_BUDGET: 'SET_ACTIVE_BUDGET',
   SET_ERROR: 'SET_ERROR',
   CLEAR_ERROR: 'CLEAR_ERROR',
   ADD_TRANSACTION: 'ADD_TRANSACTION',
@@ -32,6 +36,8 @@ const initialState = {
     activePlans: 0,
     totalPlans: 0
   },
+  budgets: [],
+  activeBudget: null,
   loading: false,
   error: null
 };
@@ -73,6 +79,20 @@ const financeReducer = (state, action) => {
       return {
         ...state,
         totalSavings: action.payload,
+        error: null
+      };
+    
+    case FINANCE_ACTIONS.SET_BUDGETS:
+      return {
+        ...state,
+        budgets: action.payload,
+        error: null
+      };
+    
+    case FINANCE_ACTIONS.SET_ACTIVE_BUDGET:
+      return {
+        ...state,
+        activeBudget: action.payload,
         error: null
       };
     
@@ -168,6 +188,7 @@ const FinanceContext = createContext();
 // Provider du contexte
 export const FinanceProvider = ({ children }) => {
   const [state, dispatch] = useReducer(financeReducer, initialState);
+  const { isAuthenticated } = useAuth();
 
   // Actions financières
   const financeActions = {
@@ -257,6 +278,30 @@ export const FinanceProvider = ({ children }) => {
       }
     },
 
+    // Créer un plan d'épargne
+    createSavingPlan: async (planData) => {
+      dispatch({ type: FINANCE_ACTIONS.SET_LOADING, payload: true });
+      dispatch({ type: FINANCE_ACTIONS.CLEAR_ERROR });
+      
+      try {
+        const newPlan = await savingPlanService.createSavingPlan(planData);
+        
+        // Recharger les données des plans d'épargne
+        const savingPlans = await savingPlanService.getUserSavingPlans();
+        const totalSavings = await savingPlanService.getTotalSavings();
+        
+        dispatch({ type: FINANCE_ACTIONS.SET_SAVING_PLANS, payload: savingPlans });
+        dispatch({ type: FINANCE_ACTIONS.SET_TOTAL_SAVINGS, payload: totalSavings });
+        dispatch({ type: FINANCE_ACTIONS.SET_LOADING, payload: false });
+        
+        return { success: true, plan: newPlan };
+      } catch (error) {
+        const message = error instanceof SavingPlanError ? error.message : 'Erreur lors de la création du plan d\'épargne';
+        dispatch({ type: FINANCE_ACTIONS.SET_ERROR, payload: message });
+        return { success: false, error: message };
+      }
+    },
+
     // Effacer l'erreur
     clearError: () => {
       dispatch({ type: FINANCE_ACTIONS.CLEAR_ERROR });
@@ -271,21 +316,25 @@ export const FinanceProvider = ({ children }) => {
         
         try {
           console.log('FinanceContext - Rechargement des données...');
-          const [balanceData, transactions, savingPlans, totalSavings] = await Promise.all([
+          const [balanceData, transactions, savingPlans, totalSavings, budgets, activeBudget] = await Promise.all([
             transactionService.getUserBalance(),
             transactionService.getUserTransactions(),
             savingPlanService.getUserSavingPlans(),
-            savingPlanService.getTotalSavings()
+            savingPlanService.getTotalSavings(),
+            budgetService.getUserBudgets(),
+            budgetService.getActiveBudget()
           ]);
           
           dispatch({ type: FINANCE_ACTIONS.SET_BALANCE, payload: balanceData });
           dispatch({ type: FINANCE_ACTIONS.SET_TRANSACTIONS, payload: transactions });
           dispatch({ type: FINANCE_ACTIONS.SET_SAVING_PLANS, payload: savingPlans });
           dispatch({ type: FINANCE_ACTIONS.SET_TOTAL_SAVINGS, payload: totalSavings });
+          dispatch({ type: FINANCE_ACTIONS.SET_BUDGETS, payload: budgets });
+          dispatch({ type: FINANCE_ACTIONS.SET_ACTIVE_BUDGET, payload: activeBudget });
           dispatch({ type: FINANCE_ACTIONS.SET_LOADING, payload: false });
         } catch (error) {
           console.error('FinanceContext - Erreur lors du rechargement:', error);
-          const message = error instanceof TransactionError || error instanceof SavingPlanError ? error.message : 'Erreur lors du rechargement des données';
+          const message = error instanceof TransactionError || error instanceof SavingPlanError || error instanceof BudgetError ? error.message : 'Erreur lors du rechargement des données';
           dispatch({ type: FINANCE_ACTIONS.SET_ERROR, payload: message });
         }
       }
@@ -297,13 +346,10 @@ export const FinanceProvider = ({ children }) => {
     ...financeActions
   };
 
-  // Charger les données financières au montage du composant
+  // Charger les données financières quand l'authentification change
   useEffect(() => {
-    // Vérifier si l'utilisateur est connecté avant de charger les données
-    const token = localStorage.getItem('accessToken');
-    if (token) {
-      console.log('FinanceProvider - Token trouvé, chargement des données...');
-      // Appeler directement la fonction au lieu de passer par financeActions
+    if (isAuthenticated) {
+      console.log('FinanceProvider - Utilisateur authentifié, chargement des données...');
       const loadData = async () => {
         dispatch({ type: FINANCE_ACTIONS.SET_LOADING, payload: true });
         dispatch({ type: FINANCE_ACTIONS.CLEAR_ERROR });
@@ -329,19 +375,36 @@ export const FinanceProvider = ({ children }) => {
           console.log('FinanceContext - Total épargne reçu:', totalSavings);
           dispatch({ type: FINANCE_ACTIONS.SET_TOTAL_SAVINGS, payload: totalSavings });
           
+          console.log('FinanceContext - Appel getUserBudgets...');
+          const budgets = await budgetService.getUserBudgets();
+          console.log('FinanceContext - Budgets reçus:', budgets);
+          dispatch({ type: FINANCE_ACTIONS.SET_BUDGETS, payload: budgets });
+          
+          console.log('FinanceContext - Appel getActiveBudget...');
+          const activeBudget = await budgetService.getActiveBudget();
+          console.log('FinanceContext - Budget actif reçu:', activeBudget);
+          dispatch({ type: FINANCE_ACTIONS.SET_ACTIVE_BUDGET, payload: activeBudget });
+          
           dispatch({ type: FINANCE_ACTIONS.SET_LOADING, payload: false });
         } catch (error) {
           console.error('FinanceContext - Erreur:', error);
-          const message = error instanceof TransactionError || error instanceof SavingPlanError ? error.message : 'Erreur lors du chargement des données financières';
+          const message = error instanceof TransactionError || error instanceof SavingPlanError || error instanceof BudgetError ? error.message : 'Erreur lors du chargement des données financières';
           dispatch({ type: FINANCE_ACTIONS.SET_ERROR, payload: message });
         }
       };
       
       loadData();
     } else {
-      console.log('FinanceProvider - Aucun token trouvé, pas de chargement des données');
+      console.log('FinanceProvider - Utilisateur non authentifié, réinitialisation des données');
+      // Réinitialiser les données quand l'utilisateur se déconnecte
+      dispatch({ type: FINANCE_ACTIONS.SET_BALANCE, payload: { balance: 0, totalIncome: 0, totalExpense: 0, transactionCount: 0 } });
+      dispatch({ type: FINANCE_ACTIONS.SET_TRANSACTIONS, payload: [] });
+      dispatch({ type: FINANCE_ACTIONS.SET_SAVING_PLANS, payload: [] });
+      dispatch({ type: FINANCE_ACTIONS.SET_TOTAL_SAVINGS, payload: { totalCurrent: 0, totalTarget: 0, totalPercentage: 0, activePlans: 0, totalPlans: 0 } });
+      dispatch({ type: FINANCE_ACTIONS.SET_BUDGETS, payload: [] });
+      dispatch({ type: FINANCE_ACTIONS.SET_ACTIVE_BUDGET, payload: null });
     }
-  }, []);
+  }, [isAuthenticated]);
 
   return (
     <FinanceContext.Provider value={value}>

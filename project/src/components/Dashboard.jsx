@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { DollarSign, TrendingUp, PiggyBank } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useFinance } from '../store/FinanceContext';
+import { formatCurrency } from '../utils/currency';
 import UserCard from './UserCard';
 import MetricCard from './MetricCard';
 import QuickActions from './QuickActions';
@@ -14,19 +15,16 @@ import RecentActivity from './RecentActivity';
 import ProCard from './ProCard';
 import ProgressBar from '../ui/ProgressBar';
 import ReloadButton from './ReloadButton';
+import SavingPlanModal from './SavingPlanModal';
 
 const Dashboard = () => {
   const { t } = useLanguage();
-  const { totalIncome, totalExpense, balance, loading } = useFinance();
+  const { totalIncome, totalExpense, balance, totalSavings, loading } = useFinance();
+  const [isSavingPlanModalOpen, setIsSavingPlanModalOpen] = useState(false);
 
   // Fonction pour formater le montant
   const formatAmount = (amount) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(amount);
+    return formatCurrency(amount, 'XOF');
   };
 
   const metrics = [
@@ -47,8 +45,8 @@ const Dashboard = () => {
       iconColor: 'bg-red-500'
     },
     {
-      title: 'totalBalance',
-      amount: loading ? '...' : formatAmount(balance),
+      title: 'totalSavings',
+      amount: loading ? '...' : formatAmount(totalSavings.totalCurrent || 0),
       change: '+0%',
       changeType: 'positive',
       icon: PiggyBank,
@@ -105,7 +103,7 @@ const Dashboard = () => {
               <DailyLimit />
             </div>
             <div className="animate-slide-up" style={{ animationDelay: '300ms' }}>
-              <SavingPlans />
+              <SavingPlans onAddPlan={() => setIsSavingPlanModalOpen(true)} />
             </div>
             <div className="animate-slide-up" style={{ animationDelay: '400ms' }}>
               <StatisticsChart />
@@ -122,6 +120,12 @@ const Dashboard = () => {
       
       {/* Bouton de rechargement */}
       <ReloadButton />
+      
+      {/* Modal pour ajouter un plan d'épargne */}
+      <SavingPlanModal 
+        isOpen={isSavingPlanModalOpen} 
+        onClose={() => setIsSavingPlanModalOpen(false)} 
+      />
     </div>
   );
 };

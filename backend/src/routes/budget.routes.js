@@ -1,5 +1,5 @@
 const express = require('express');
-const { create, list, getById, update, remove } = require('../controllers/budget.controller');
+const { create, list, getById, update, remove, deactivate } = require('../controllers/budget.controller');
 const { validate, budgetSchema } = require('../utils/validator');
 const { authenticateToken } = require('../middlewares/auth.middleware');
 
@@ -112,5 +112,27 @@ router.put('/:id', authenticateToken, validate(budgetSchema), update);
  *         description: Budget non trouvé ou non supprimable
  */
 router.delete('/:id', authenticateToken, remove);
+
+/**
+ * @swagger
+ * /budgets/{id}/deactivate:
+ *   patch:
+ *     summary: Désactiver un budget
+ *     tags: [Budget]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Budget désactivé
+ *       404:
+ *         description: Budget non trouvé
+ */
+router.patch('/:id/deactivate', authenticateToken, deactivate);
 
 module.exports = router; 
